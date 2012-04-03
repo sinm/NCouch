@@ -96,6 +96,18 @@ namespace NCouch
 			return request;
 		}
 		
+		public Response TrySend()
+		{
+			try
+			{
+				return Send ();
+			}
+			catch(ResponseException ex)
+			{
+				return ex.Response;
+			}
+		}
+		
 		public Response Send()
 		{
 			if (Verb == "GET" && String.IsNullOrEmpty(ETag))
