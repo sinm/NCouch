@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NCouch", "NCouch\NCouch.csproj", "{5FC9FE73-0294-4879-B5E2-17072664B84D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NCouch.Test", "NCouch.Test\NCouch.Test.csproj", "{6CC96251-A46C-4F86-9714-8096152BB8C2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+		Default|Any CPU = Default|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5FC9FE73-0294-4879-B5E2-17072664B84D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5FC9FE73-0294-4879-B5E2-17072664B84D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5FC9FE73-0294-4879-B5E2-17072664B84D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5FC9FE73-0294-4879-B5E2-17072664B84D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6CC96251-A46C-4F86-9714-8096152BB8C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CC96251-A46C-4F86-9714-8096152BB8C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CC96251-A46C-4F86-9714-8096152BB8C2}.Default|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CC96251-A46C-4F86-9714-8096152BB8C2}.Default|Any CPU.Build.0 = Debug|Any CPU
+		{6CC96251-A46C-4F86-9714-8096152BB8C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CC96251-A46C-4F86-9714-8096152BB8C2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = NCouch.Test\NCouch.Test.csproj
+	EndGlobalSection
+EndGlobal
