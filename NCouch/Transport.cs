@@ -147,6 +147,10 @@ namespace NCouch
 			{
 				Cache.Add(Uri, res);
 			}
+			else if (Verb == "DELETE")
+			{
+				Cache.Remove(Uri);
+			}
 			return res;		
 		}
 	}

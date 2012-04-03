@@ -93,7 +93,9 @@ namespace NCouch.Test
 			request.Verb = "DELETE";
 			request.ETag = etag;
 			response = request.Send();
+			Assert.AreNotSame(response, response2);
 			Assert.AreEqual(response.Status, HttpStatusCode.OK);
+			Assert.IsFalse(response2.IsCached);
 			
 			request_setup();
 			request.Uri += DOC_ID;
