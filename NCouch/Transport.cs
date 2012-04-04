@@ -31,6 +31,14 @@ namespace NCouch
 			}
 		}
 		
+		public long Size
+		{
+			get
+			{
+				return Body == null ? 0 : Body.Length;
+			}
+		}
+		
 		public void SetObject(object o)
 		{
 			Text = (new JavaScriptSerializer()).Serialize(o);
@@ -47,7 +55,7 @@ namespace NCouch
 		}
 		
 		
-		protected static ResponseCache Cache = new ResponseCache(TimeSpan.FromSeconds(100));
+		protected static ResponseCache Cache = new ResponseCache(1048576 * 100);
 	}
 	
 	public class Request : Transport
@@ -110,12 +118,16 @@ namespace NCouch
 		
 		public Response Send()
 		{
-			if (Verb == "GET" && String.IsNullOrEmpty(ETag))
+			Response from_cache = null;
+			if (Verb == "GET")
 			{
-				Response from_cache = Cache.Get(Uri);
+				from_cache = Cache.Get(Uri);
 				if (from_cache != null)
 				{
-					ETag = from_cache.ETag;
+					if (String.IsNullOrEmpty(ETag))
+						ETag = from_cache.ETag;
+					else if (ETag != from_cache.ETag)
+						from_cache = null;
 				}				
 			}
 			HttpWebRequest request = composeRequest();
@@ -133,11 +145,18 @@ namespace NCouch
 				{
 					if (response.StatusCode == HttpStatusCode.NotModified)
 					{
-						Response from_cache = Cache.Get(Uri);
 						if (from_cache != null)
-						{
 							return from_cache;
+						else
+						{
+							from_cache = Cache.Get(Uri);
+							if (from_cache != null && from_cache.ETag == ETag)
+								return from_cache;
 						}
+					}
+					else
+					{
+						Cache.Remove(Uri);
 					}
 					throw new ResponseException(new Response(response));
 				}
@@ -159,10 +178,15 @@ namespace NCouch
 	{
 		public HttpStatusCode Status;
 		
-		public bool IsCached {
-			get {return m_IsCached;} 
-			internal set {m_IsCached = value;}
-		} bool m_IsCached;
+		public bool IsCached 
+		{
+			get 
+			{
+				return CacheIndex != 0;
+			}
+		}
+		
+		internal long CacheIndex = 0;
 		
 		internal Response(HttpWebResponse response)
 		{

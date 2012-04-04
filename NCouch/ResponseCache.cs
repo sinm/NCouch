@@ -1,46 +1,45 @@
 using System;
 using System.Collections.Generic;
-using System.Timers;
 
 namespace NCouch
 {
 	public class ResponseCache
 	{
 		Dictionary<string, Response> m_Cache = new Dictionary<string, Response>();
-		Dictionary<string, DateTime> m_CacheTTL = new Dictionary<string, DateTime>();
-		TimeSpan m_TTL;
-		Timer m_Timer;
+		SortedDictionary<long, string> m_Index = new SortedDictionary<long, string>();
+		long m_MaxSize;
+		long m_LastIndex = 0;
+		long m_Size = 0;
 		object m_SyncRoot = new object();
 		
-		public ResponseCache (TimeSpan ttl)
-		{
-			m_TTL = ttl;
-			m_Timer = new Timer(m_TTL.TotalMilliseconds);
-			m_Timer.Elapsed += timer_elapsed;
-			m_Timer.AutoReset = false;
-			m_Timer.Start();
+		public ResponseCache (long max_size)
+		{	
+			m_MaxSize = max_size;
 		}
 		
 		public void Clear()
 		{
 			lock(m_SyncRoot)
 			{
-				m_CacheTTL.Clear();
 				m_Cache.Clear();
+				m_Index.Clear();
 			}
 		}
 		
-		public void Remove(string uri)
+		public Response Remove(string uri)
 		{
 			lock(m_SyncRoot)
 			{
-				Response response;
+				Response response = null;
 				if (m_Cache.TryGetValue(uri, out response))
 				{
-					m_CacheTTL.Remove(uri);
 					m_Cache.Remove(uri);
-					response.IsCached = false;
+					m_Index.Remove(response.CacheIndex);
+					response.CacheIndex = 0;	
+					m_Size -= response.Size;
+					if (m_Size < 0) m_Size = 0;
 				}
+				return response;
 			}
 		}
 		
@@ -49,46 +48,45 @@ namespace NCouch
 			lock(m_SyncRoot)
 			{
 				Response response = null;
-				if (m_Cache.TryGetValue(uri, out response))
+				if(m_Cache.TryGetValue(uri, out response))
 				{
-					m_CacheTTL[uri] = DateTime.Now;
+					m_Index.Remove(response.CacheIndex);
+					m_LastIndex += 1;
+					response.CacheIndex = m_LastIndex;
+					m_Index.Add(m_LastIndex, uri);
 				}
 				return response;
 			}
 		}
 		
-		public void Add(string uri, Response response)
+		public bool Add(string uri, Response response)
 		{
+			if (response.Size > m_MaxSize)
+				return false;
 			lock(m_SyncRoot)
-			{
-				m_CacheTTL[uri] = DateTime.Now;
-				m_Cache[uri] = response;
-				response.IsCached = true;
-			}
-		}
-		
-		void timer_elapsed(object sender, ElapsedEventArgs e)
-		{
-			m_Timer.Stop();
-			lock(m_SyncRoot)
-			{
-				List<string> to_remove = new List<string>();
-				DateTime now = DateTime.Now;
-				foreach(KeyValuePair<string,DateTime> kvp in m_CacheTTL)
+			{				
+				Remove(uri);
+				if (m_Size + response.Size > m_MaxSize)
 				{
-					if ((now - kvp.Value) > m_TTL)
+					long to_remove_size = 0;
+					List<string> to_remove = new List<string>();
+					foreach(KeyValuePair<long, string> kvp in m_Index)
 					{
-						to_remove.Add(kvp.Key);
+						to_remove.Add(kvp.Value);
+						to_remove_size += m_Cache[kvp.Value].Size;
+						if (m_Size + response.Size - to_remove_size <= m_MaxSize)
+							break;
 					}
+					foreach(string to_remove_uri in to_remove)
+						Remove(to_remove_uri);
 				}
-				foreach(string uri in to_remove)
-				{
-					Remove(uri);
-				}
+				m_LastIndex += 1;
+				response.CacheIndex = m_LastIndex;
+				m_Cache.Add(uri, response);
+				m_Index.Add(response.CacheIndex, uri);
+				return true;
 			}
-			m_Timer.Start();
-		}
-		
+		}		
 	}
 }
 
