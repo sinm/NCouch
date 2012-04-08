@@ -54,8 +54,7 @@ namespace NCouch
 			return GetObject<Dictionary<string, object>>();
 		}
 		
-		
-		protected static ResponseCache Cache = new ResponseCache(1048576 * 100);
+		protected static ResponseCache Cache = new ResponseCache(Config.GetLong("ncouch.cache_size", 1048576 * 100));
 	}
 	
 	public class Request : Transport
