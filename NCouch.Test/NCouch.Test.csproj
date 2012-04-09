@@ -22,7 +22,7 @@
     <ConsolePause>false</ConsolePause>
     <CustomCommands>
       <CustomCommands>
-        <Command type="Execute" command="nunit-console2 bin/Debug/NCouch.Test.dll" workingdir="${ProjectDir}" />
+        <Command type="Execute" command="nunit-console2 ${TargetFile}" workingdir="${TargetDir}" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>

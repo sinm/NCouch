@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Text;
 using System.IO;
+using System.Web;
 using System.Web.Script.Serialization;
 using System.Collections.Generic;
 
@@ -44,14 +45,9 @@ namespace NCouch
 			Text = (new JavaScriptSerializer()).Serialize(o);
 		}
 		
-		public T GetObject<T>()
+		public object GetObject()
 		{
-			return (new JavaScriptSerializer()).Deserialize<T>(Text);
-		}
-		
-		public Dictionary<string, object> getTree()
-		{
-			return GetObject<Dictionary<string, object>>();
+			return (new JavaScriptSerializer()).DeserializeObject(Text);
 		}
 		
 		protected static ResponseCache Cache = new ResponseCache(Config.GetLong("ncouch.cache_size", 1048576 * 100));
@@ -68,9 +64,54 @@ namespace NCouch
 		public string Login;
 		public string Password;
 		
+		public Dictionary<string, object> Query
+		{
+			get {return m_Query;}
+		} Dictionary<string, object> m_Query = new Dictionary<string, object>();
+		
+		public void setQueryObject(object query)
+		{
+			JavaScriptSerializer serializer = new JavaScriptSerializer();
+			string query_string = serializer.Serialize(query);
+			Dictionary<string, object> test_query = 
+				serializer.DeserializeObject(query_string) as Dictionary<string, object>;
+			if (test_query != null)
+				m_Query = test_query;
+			else
+				throw new ArgumentException("setQueryObject can't deserialize to dictionary: " + query_string);
+		}
+		
+		public string URL
+		{
+			get
+			{
+				if (String.IsNullOrEmpty(Uri))
+					return Uri;
+				StringBuilder url = new StringBuilder(Uri);
+				if (Query.Count > 0)
+				{
+					url.Append("?");
+					JavaScriptSerializer serializer = new JavaScriptSerializer();
+					int index = 0;
+					foreach(KeyValuePair<string,object> kvp in Query)
+					{
+						url.Append(kvp.Key);
+						url.Append("=");
+						url.Append(HttpUtility.UrlEncode(serializer.Serialize(kvp.Value)));
+						if (index < Query.Count - 1)
+						{
+							url.Append("&");
+						}
+						index++;
+					}
+				}
+				return url.ToString();
+			}
+		}
+		
 		HttpWebRequest composeRequest()
 		{
-			HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(Uri);
+			HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(URL);
 			request.Method = Verb; 
 			request.ContentType = ContentType;			
 			request.KeepAlive = true;
@@ -120,7 +161,7 @@ namespace NCouch
 			Response from_cache = null;
 			if (Verb == "GET")
 			{
-				from_cache = Cache.Get(Uri);
+				from_cache = Cache.Get(URL);
 				if (from_cache != null)
 				{
 					if (String.IsNullOrEmpty(ETag))
@@ -148,14 +189,14 @@ namespace NCouch
 							return from_cache;
 						else
 						{
-							from_cache = Cache.Get(Uri);
+							from_cache = Cache.Get(URL);
 							if (from_cache != null && from_cache.ETag == ETag)
 								return from_cache;
 						}
 					}
 					else
 					{
-						Cache.Remove(Uri);
+						Cache.Remove(URL);
 					}
 					throw new ResponseException(new Response(response));
 				}
@@ -163,11 +204,11 @@ namespace NCouch
 			Response res = new Response(response);
 			if ((Verb == "GET") && !String.IsNullOrEmpty(res.ETag))
 			{
-				Cache.Add(Uri, res);
+				Cache.Add(URL, res);
 			}
 			else if (Verb == "DELETE")
 			{
-				Cache.Remove(Uri);
+				Cache.Remove(URL);
 			}
 			return res;		
 		}

@@ -2,6 +2,7 @@ using System;
 using NUnit.Framework;
 using NCouch;
 using System.Net;
+using System.Collections.Generic;
 
 namespace NCouch.Test
 {
@@ -102,6 +103,30 @@ namespace NCouch.Test
 			response = request.TrySend();
 			Assert.AreEqual(response.Status, HttpStatusCode.NotFound);
 			Assert.IsFalse(response.IsCached);
+			
+		}
+		
+		[Test]
+		public void Serialization()
+		{
+			string id = "ncouch=5";
+			var obj = new {foo="bar"};
+			
+			request.Uri += id;	
+			request.Verb = "PUT";
+			request.SetObject(obj);
+			Assert.AreEqual(request.Send().Status, HttpStatusCode.Created);
+			
+			request_setup();
+			request.Uri += "_all_docs";
+			request.setQueryObject(new {include_docs = true, keys = new string[] {"ncouch=5"}});
+			response = request.Send();
+			Assert.AreEqual(response.Status, HttpStatusCode.OK);
+			Assert.AreSame(response, request.Send());
+			
+			Dictionary<string, object> result = response.GetObject() as Dictionary<string, object>;
+			object foo = ((Dictionary<string, object>)((Dictionary<string, object>)((object[])result["rows"])[0])["doc"])["foo"];
+			Assert.AreEqual(foo.ToString(), obj.foo);
 			
 		}
 	}
