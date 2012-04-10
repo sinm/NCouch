@@ -41,6 +41,8 @@
     <Compile Include="Transport.cs" />
     <Compile Include="ResponseCache.cs" />
     <Compile Include="Config.cs" />
+    <Compile Include="Request.cs" />
+    <Compile Include="Response.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
