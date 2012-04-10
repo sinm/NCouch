@@ -119,15 +119,12 @@ namespace NCouch.Test
 			
 			request_setup();
 			request.Uri += "_all_docs";
-			request.setQueryObject(new {include_docs = true, keys = new string[] {"ncouch=5"}});
+			request.setQueryObject(new {include_docs = true, keys = new string[] {id}});
 			response = request.Send();
 			Assert.AreEqual(response.Status, HttpStatusCode.OK);
 			Assert.AreSame(response, request.Send());
-			
-			Dictionary<string, object> result = response.GetObject() as Dictionary<string, object>;
-			object foo = ((Dictionary<string, object>)((Dictionary<string, object>)((object[])result["rows"])[0])["doc"])["foo"];
-			Assert.AreEqual(foo.ToString(), obj.foo);
-			
+			string foo = response.Parse("rows", 0, "doc", "foo") as string;
+			Assert.AreEqual(foo, obj.foo);			
 		}
 	}
 }

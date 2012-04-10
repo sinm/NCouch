@@ -8,7 +8,6 @@ using System.Collections.Generic;
 
 namespace NCouch
 {
-	
 	public abstract class Transport
 	{
 		public string ContentType;
@@ -48,6 +47,38 @@ namespace NCouch
 		public object GetObject()
 		{
 			return (new JavaScriptSerializer()).DeserializeObject(Text);
+		}
+		
+		public object Parse(params object[] path)
+		{
+			object obj = GetObject();			
+			uint index;
+			foreach(object cmp in path)
+			{
+				if (UInt32.TryParse(cmp.ToString(), out index))
+				{
+					obj = (obj as object[])[index];					
+				}
+				else
+				{
+					obj = (obj as Dictionary<string, object>)[cmp.ToString()];
+				}
+			}
+			return obj;
+		}
+		
+		public bool TryParse(out object result, params object[] path)
+		{
+			try
+			{
+				result = Parse(path);
+				return true;
+			}
+			catch
+			{
+				result = null;
+				return false;
+			}
 		}
 		
 		protected static ResponseCache Cache = new ResponseCache(Config.GetLong("ncouch.cache_size", 1048576 * 100));
