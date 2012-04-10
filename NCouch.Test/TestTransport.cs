@@ -64,7 +64,7 @@ namespace NCouch.Test
 			
 			request_setup();
 			request.Login = "nouser";
-			response = request.TrySend();
+			Assert.IsTrue(request.TrySend(out response));
 			Assert.AreEqual(response.Status, HttpStatusCode.Unauthorized);
 		}
 		
@@ -100,7 +100,7 @@ namespace NCouch.Test
 			
 			request_setup();
 			request.Uri += DOC_ID;
-			response = request.TrySend();
+			Assert.IsTrue(request.TrySend(out response));
 			Assert.AreEqual(response.Status, HttpStatusCode.NotFound);
 			Assert.IsFalse(response.IsCached);
 			

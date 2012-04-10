@@ -144,15 +144,22 @@ namespace NCouch
 			return request;
 		}
 		
-		public Response TrySend()
+		public bool TrySend(out Response response)
 		{
 			try
 			{
-				return Send ();
+				response = Send();
+				return true;
 			}
 			catch(ResponseException ex)
 			{
-				return ex.Response;
+				response = ex.Response;
+				return true;
+			}
+			catch
+			{
+				response = null;
+				return false;
 			}
 		}
 		
