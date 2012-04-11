@@ -119,7 +119,7 @@ namespace NCouch.Test
 			
 			request_setup();
 			request.Uri += "_all_docs";
-			request.setQueryObject(new {include_docs = true, keys = new string[] {id}});
+			request.SetQueryObject(new {include_docs = true, keys = new string[] {id}});
 			response = request.Send();
 			Assert.AreEqual(response.Status, HttpStatusCode.OK);
 			Assert.AreSame(response, request.Send());

@@ -24,7 +24,7 @@ namespace NCouch
 			get {return m_Query;}
 		} Dictionary<string, object> m_Query = new Dictionary<string, object>();
 		
-		public void setQueryObject(object query)
+		public void SetQueryObject(object query)
 		{
 			JavaScriptSerializer serializer = new JavaScriptSerializer();
 			string query_string = serializer.Serialize(query);
@@ -48,11 +48,16 @@ namespace NCouch
 					url.Append("?");
 					JavaScriptSerializer serializer = new JavaScriptSerializer();
 					int index = 0;
+					string val;
 					foreach(KeyValuePair<string,object> kvp in Query)
 					{
 						url.Append(kvp.Key);
 						url.Append("=");
-						url.Append(HttpUtility.UrlEncode(serializer.Serialize(kvp.Value)));
+						if (kvp.Value is string && kvp.Key != "keys" && kvp.Key != "startkey" && kvp.Key != "endkey")
+							val = kvp.Value.ToString();
+						else
+							val = serializer.Serialize(kvp.Value);
+						url.Append(HttpUtility.UrlEncode(val));
 						if (index < Query.Count - 1)
 						{
 							url.Append("&");
@@ -99,16 +104,23 @@ namespace NCouch
 			return request;
 		}
 		
+		public Response TrySend()
+		{
+			try
+			{
+				return Send();
+			}
+			catch(ResponseException ex)
+			{
+				return ex.Response;
+			}			
+		}
+		
 		public bool TrySend(out Response response)
 		{
 			try
 			{
-				response = Send();
-				return true;
-			}
-			catch(ResponseException ex)
-			{
-				response = ex.Response;
+				response = TrySend();
 				return true;
 			}
 			catch
