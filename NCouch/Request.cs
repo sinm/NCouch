@@ -16,8 +16,8 @@ namespace NCouch
 			get { return m_Verb; }
 			set { m_Verb = value.ToUpper(); }
 		} string m_Verb;
-		public string Login;
-		public string Password;
+		
+		public Auth Auth;
 		
 		public Dictionary<string, object> Query
 		{
@@ -75,13 +75,10 @@ namespace NCouch
 			request.Method = Verb; 
 			request.ContentType = ContentType;			
 			request.KeepAlive = true;
-			if (!String.IsNullOrEmpty(Login))
-			{
-	            string authValue = "Basic ";
-    	        string userNAndPassword = Login + ":" + Password;
-            	string b64 = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes(userNAndPassword));
-            	request.Headers.Add("Authorization", authValue + b64);
-			}
+			
+			if (Auth != null)
+				Auth.BeforeRequest(request);
+			
 			if (!String.IsNullOrEmpty(ETag))
 			{
 				if (Verb == "GET")

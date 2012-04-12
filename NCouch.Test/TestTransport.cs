@@ -10,10 +10,10 @@ namespace NCouch.Test
 	public class TestTransport
 	{
 		const string SERVER_URL = "http://127.0.0.1:3004/db";
-		const string LOGIN = "root@localhost";
-		const string PASSWORD = "1q2w3e4r";
 		const string DB_NAME = "ncouch-test";
 		const string DOC_ID = "ncouch-5";
+		
+		Auth AUTH = new BasicAuth("root@localhost", "1q2w3e4r");
 		
 		Request request;
 		Response response;
@@ -25,8 +25,7 @@ namespace NCouch.Test
 				Uri = SERVER_URL + "/" + DB_NAME + "/",
 				Verb = "GET",
 				ContentType = "application/json",
-				Login = LOGIN,
-				Password = PASSWORD
+				Auth = AUTH
 			};
 			response = null;
 		}
@@ -63,7 +62,7 @@ namespace NCouch.Test
 			Assert.AreEqual(response.Status, HttpStatusCode.OK);
 			
 			request_setup();
-			request.Login = "nouser";
+			request.Auth = new BasicAuth("nobody", "nogo");
 			Assert.IsTrue(request.TrySend(out response));
 			Assert.AreEqual(response.Status, HttpStatusCode.Unauthorized);
 		}
