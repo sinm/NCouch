@@ -18,7 +18,7 @@ namespace NCouch
 				Convert.ToBase64String(Encoding.ASCII.GetBytes(login + ":" + password));
 		}
 		
-		readonly string Value;
+		public readonly string Value;
 		
 		public override void BeforeRequest(HttpWebRequest request)
 		{ 
@@ -30,5 +30,7 @@ namespace NCouch
 			//NOP
 		}
 	}
+	
+	//TODO: OAuth & cookie
 }
 

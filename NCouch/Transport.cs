@@ -46,6 +46,20 @@ namespace NCouch
 			return (new JavaScriptSerializer()).DeserializeObject(Text);
 		}
 		
+		/*public bool TryGetObject(out object obj)
+		{
+			try
+			{
+				obj = GetObject();
+				return obj != null;
+			}
+			catch
+			{
+				obj = null;
+				return false;
+			}
+		}*/
+		
 		public object Parse(params object[] path)
 		{
 			object obj = GetObject();			

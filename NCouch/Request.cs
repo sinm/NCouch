@@ -21,22 +21,32 @@ namespace NCouch
 		
 		public Auth Auth;
 		
-		public Dictionary<string, object> Query
-		{
-			get {return m_Query;}
-		} Dictionary<string, object> m_Query = new Dictionary<string, object>();
+		public Dictionary<string, object> Query = new Dictionary<string, object>();
 		
 		public void SetQueryObject(object query)
 		{
+			if (query == null)
+			{
+				Query = new Dictionary<string, object>();
+				return;
+			}
+			Dictionary<string, object> test_query = query as Dictionary<string, object>;
+			if (test_query != null)
+			{
+				Query = test_query;
+				return;
+			}
 			JavaScriptSerializer serializer = new JavaScriptSerializer();
 			string query_string = serializer.Serialize(query);
-			Dictionary<string, object> test_query = 
+			test_query = 
 				serializer.DeserializeObject(query_string) as Dictionary<string, object>;
 			if (test_query != null)
-				m_Query = test_query;
+				Query = test_query;
 			else
-				throw new ArgumentException("setQueryObject can't deserialize to dictionary: " + query_string);
+				Query = new Dictionary<string, object>();
 		}
+		
+		public bool JsonQuery = true;
 		
 		public string URL
 		{
@@ -55,10 +65,17 @@ namespace NCouch
 					{
 						url.Append(kvp.Key);
 						url.Append("=");
-						if (kvp.Value is string && kvp.Key != "keys" && kvp.Key != "startkey" && kvp.Key != "endkey")
-							val = kvp.Value.ToString();
+						if (JsonQuery)
+						{
+							if (kvp.Value is string && !kvp.Key.StartsWith("key") && !kvp.Key.EndsWith("key"))
+								val = (string)kvp.Value;
+							else
+								val = serializer.Serialize(kvp.Value);
+						}
 						else
-							val = serializer.Serialize(kvp.Value);
+						{
+							val = kvp.Value == null ? "<null>" : kvp.Value.ToString();
+						}
 						url.Append(HttpUtility.UrlEncode(val));
 						if (index < Query.Count - 1)
 						{
