@@ -1,9 +1,11 @@
 using System;
 using System.Net;
 using System.IO;
+using System.Diagnostics;
 
 namespace NCouch
 {
+	[DebuggerDisplay ("{Status} [Cached? {IsCached}]")]
 	public class Response : Transport
 	{
 		public HttpStatusCode Status;

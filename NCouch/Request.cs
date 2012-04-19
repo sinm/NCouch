@@ -5,9 +5,11 @@ using System.Web;
 using System.Web.Script.Serialization;
 using System.Text;
 using System.IO;
+using System.Diagnostics;
 
 namespace NCouch
 {
+	[DebuggerDisplay ("{Verb} {URL}")]
 	public class Request : Transport
 	{
 		public string Uri;
