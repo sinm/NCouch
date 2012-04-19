@@ -43,7 +43,13 @@
     <Compile Include="Config.cs" />
     <Compile Include="Request.cs" />
     <Compile Include="Response.cs" />
+    <Compile Include="DB.cs" />
+    <Compile Include="Server.cs" />
+    <Compile Include="View.cs" />
+    <Compile Include="Document.cs" />
     <Compile Include="Auth.cs" />
+    <Compile Include="Query.cs" />
+    <Compile Include="Row.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

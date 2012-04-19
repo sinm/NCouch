@@ -92,7 +92,7 @@ namespace NCouch
 		{
 			HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(URL);
 			request.Method = Verb; 
-			request.ContentType = ContentType;			
+			request.ContentType = ContentType ?? "application/json";			
 			request.KeepAlive = true;
 			
 			if (Auth != null)
