@@ -5,23 +5,23 @@ using System.Text;
 
 namespace NCouch.Test
 {
-	public class Employee
+	public class Employee : IData
 	{		
-		public Employee (string id) : this(new Document(id))
+		/*public Employee (string id) : this(new Document(id))
 		{
 		}
 		
 		public Employee (Document doc)
 		{
 			Data = doc;
-		}
+		}*/
 		
-		public readonly Document Data;
+		public Document Data {get; set;}
 		
 		public string Id
 		{
-			get {return Data._id;}
-			set {Data._id = value;}
+			get {return Data.Id;}
+			set {Data.Id = value;}
 		}
 		
 		public string ManagerId

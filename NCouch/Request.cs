@@ -40,10 +40,7 @@ namespace NCouch
 			string query_string = serializer.Serialize(query);
 			test_query = 
 				serializer.DeserializeObject(query_string) as Dictionary<string, object>;
-			if (test_query != null)
-				Query = test_query;
-			else
-				Query = new Dictionary<string, object>();
+			Query = test_query ?? new Dictionary<string, object>();
 		}
 		
 		public bool JsonQuery = true;

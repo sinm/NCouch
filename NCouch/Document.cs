@@ -6,12 +6,29 @@ using System.Diagnostics;
 namespace NCouch
 {
 	[DebuggerDisplay ("{_id}@{_rev}")]
-	public class Document : Dictionary<string, object>
+	public class Document : Dictionary<string, object>, IData
 	{		
-		/*public Document ()
+		public Document() : base()
 		{
-
-		}*/
+		}
+		
+		public Document Data
+		{
+			get
+			{
+				return this;
+			}
+			set
+			{
+				Clear();
+				if (value == null)
+					return;
+				foreach(KeyValuePair<string, object> kvp in value)
+				{
+					this[kvp.Key] = kvp.Value;
+				}
+			}
+		}
 		
 		public Document (string id) : base()
 		{
@@ -23,33 +40,16 @@ namespace NCouch
 		}
 		
 		[ScriptIgnore]
-		public string _id
+		public string Id
 		{
-			get 
-			{
-				/*object id;
-				if(TryGetValue("_id", out id))
-				{
-					return (string)id;
-				}
-				return null;*/
-				return this["_id"] as string;
-			} 
+			get { return this["_id"] as string; } 
 			set { this["_id"] = value; }
 		}
 		
 		[ScriptIgnore]
-		public string _rev {
-			get 
-			{
-				/*object rev;
-				if(TryGetValue("_rev", out rev))
-				{
-					return (string)rev;
-				}
-				return null;*/
-				return this["_rev"] as string;
-			} 
+		public string Rev 
+		{
+			get { return this["_rev"] as string; } 
 			set { this["_rev"] = value; }
 		}
 		
@@ -66,22 +66,50 @@ namespace NCouch
 				base[key] = value;
 			}
 		}
-		
+
 		public static Document Deserialize(string json)
 		{
 			return new Document((new JavaScriptSerializer()).DeserializeObject(json) as Dictionary<string, object>);
 		}
 		
-		public void Refresh(DB db)
+		public Attachment GetAttachment(string name)
 		{
-			Document new_doc = db.Read(_id);
-			Clear();
-			if (new_doc == null)
-				return;
-			foreach(KeyValuePair<string, object> kvp in new_doc)
+			Attachment result = new Attachment();
+			result.DocumentId = Id;
+			result.DocumentRev = Rev;
+			result.Name = name;
+			if (this["_attachments"] != null)
 			{
-				this[kvp.Key] = kvp.Value;
+				Dictionary<string, object> att = 
+					((Dictionary<string, object>)this["_attachments"])[name] as Dictionary<string, object>;
+				if (att != null)
+				{
+					result.ContentType = att["content_type"] as string;
+					long length;
+					if(long.TryParse(att["length"].ToString(), out length))
+						result.Length = length;
+					return result;
+				}
 			}
+			return null;
+		}
+		
+		public Attachment NewAttachment(string name, string content_type)
+		{
+			return new Attachment {Name = name, DocumentId = Id, DocumentRev = Rev, ContentType = content_type};
+		}
+		
+		public List<Attachment> GetAttachments()
+		{
+			List<Attachment> atts = new List<Attachment>();
+			if (ContainsKey("_attachments"))
+			{
+				foreach(string name in ((Dictionary<string, object>)this["_attachments"]).Keys)
+				{
+					atts.Add(GetAttachment(name));
+				}
+			}
+			return atts;
 		}
 	}
 }

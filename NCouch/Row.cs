@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace NCouch
 {
-	public class Row
+	public class Row<T> where T: IData, new()
 	{
-		public Row (Dictionary<string, object> source)
+		public Row(Dictionary<string, object> source)
 		{
 			object test;
 			if (source.TryGetValue("key", out test))
@@ -22,14 +22,18 @@ namespace NCouch
 			}
 			if (source.TryGetValue("doc", out test))
 			{
-				doc = test == null ? null : new Document(test as Dictionary<string, object>);
+				if (test != null)
+				{
+					doc = new T();
+					doc.Data = new Document(test as Dictionary<string, object>);
+				}
 			}
 		}
 		
 		public object key;
 		public object value;
 		public string id;
-		public Document doc;
+		public T doc;
 	}
 }
 

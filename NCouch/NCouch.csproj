@@ -50,6 +50,8 @@
     <Compile Include="Auth.cs" />
     <Compile Include="Query.cs" />
     <Compile Include="Row.cs" />
+    <Compile Include="Attachment.cs" />
+    <Compile Include="IData.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

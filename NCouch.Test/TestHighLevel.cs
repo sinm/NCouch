@@ -8,6 +8,7 @@ using System.Reflection;
 
 namespace NCouch.Test
 {
+	//TODO: design doc (update handler)
 	[TestFixture]
 	public class TestHighLevel
 	{
@@ -53,71 +54,130 @@ namespace NCouch.Test
 			
 			Assert.AreEqual(e1_1.Id, id);
 			Assert.AreNotEqual(e1_1.FirstName, new_name);
-			Assert.IsNull(e1_1.Data._rev);
+			Assert.IsNull(e1_1.Data.Rev);
 			
-			DB1.Create(e1_1.Data);
-			string old_rev = e1_1.Data._rev;
+			DB1.Create(e1_1);
+			string old_rev = e1_1.Data.Rev;
 			Assert.IsNotNull(old_rev);			
 			
 			e1_1.FirstName = new_name;			
-			DB1.Update(e1_1.Data);
-			Assert.IsNotNull(e1_1.Data._rev);
-			Assert.AreNotEqual(old_rev, e1_1.Data._rev);
+			DB1.Update(e1_1);
+			Assert.IsNotNull(e1_1.Data.Rev);
+			Assert.AreNotEqual(old_rev, e1_1.Data.Rev);
 			
-			Employee e1_2 = new Employee(DB1.Read(id));
-			Assert.AreEqual(e1_1.Data._rev, e1_2.Data._rev);
+			Employee e1_2 = DB1.Read<Employee>(id);
+			Assert.AreEqual(e1_1.Data.Rev, e1_2.Data.Rev);
 			Assert.AreEqual(e1_1.FirstName, e1_2.FirstName);
 			
 			e1_1.FirstName = String.Empty;
-			DB1.Update(e1_1.Data);
+			DB1.Update(e1_1);
 			Assert.AreNotEqual(e1_1.FirstName, e1_2.FirstName);
-			e1_2.Data.Refresh(DB1);
+			DB1.Refresh(e1_2);
 			Assert.AreEqual(e1_1.FirstName, e1_2.FirstName);
 			
-			DB1.Delete(e1_1.Data);
-			e1_2.Data.Refresh(DB1);
-			Assert.IsNull(e1_2.Data._id);
+			DB1.Delete(e1_1);
+			DB1.Refresh(e1_2);
+			Assert.IsNull(e1_2.Id);
 		}
 		
 		[Test]
 		public void Query_View()
 		{
-			IList<Document> conflicts;
+			List<Employee> conflicts;
 			Assert.IsTrue(bulk_insert(out conflicts));
 			var rows1 = DB1/"_all_docs"/new Query {include_docs=true, key="employee-12"};
 			var rows2 = DB1/"_all_docs"/new {keys=new object[]{"employee-12"}};
-			Assert.AreEqual(rows1[0].doc._id, rows2[0].key);
+			Assert.AreEqual(rows1[0].doc.Id, rows2[0].key);
 		}
 		
 		[Test]
 		public void Bulk()
 		{
-			IList<Document> conflicts;
+			List<Employee> conflicts;
 			Assert.IsTrue(bulk_insert(out conflicts));
 			Assert.IsTrue(DB1.Delete(DB1.Read("employee-1")));
 			Assert.IsFalse(bulk_insert(out conflicts));
 			Assert.AreEqual(conflicts.Count, 11);
 		}
 		
-		bool bulk_insert(out IList<Document> conflicts)
+		bool bulk_insert(out List<Employee> conflicts)
 		{
-			Employee e;
-			var docs = new List<Document>();
+			var docs = new List<Employee>();
 			for(int i=1; i<= 12; i++)
 			{
-				e = readEmployee("employee-"+i.ToString());
-				docs.Add(e.Data);
+				docs.Add(readEmployee("employee-"+i.ToString()));
 			}
-
-			return DB1._bulk_docs(docs, out conflicts);
+			return DB1._bulk_docs<Employee>(docs, out conflicts);
 		}
 		
 		Employee readEmployee(string id)
 		{
-			return new Employee(
-				Document.Deserialize(
+			Employee e = new Employee();
+			e.Data = readDocument(id);
+			return e;
+		}
+		
+		Document readDocument(string id)
+		{
+			return Document.Deserialize(
 					File.ReadAllText(
-						Environment.CurrentDirectory + "/Employees/" + id + ".json")));
+						Environment.CurrentDirectory + "/Employees/" + id + ".json"));
+		}
+		
+		[Test]
+		public void Attachments()
+		{
+			List<Employee> conflicts;
+			Assert.IsTrue(bulk_insert(out conflicts));
+			foreach(Employee e in (DB1/"_all_docs").ListDocuments<Employee>(null))
+			{	
+				var att = e.Data.NewAttachment("picture", "image/jpg");
+				var rev = att.DocumentRev;
+				DB1.SaveAttachment(att, readPicture(e.Id));
+				Assert.Greater(att.Length, 0);
+				Assert.AreNotEqual(rev, att.DocumentRev);
+			}	
+			var emp = DB1.Read<Employee>("employee-1");
+			var a = emp.Data.GetAttachment("picture");
+			byte[] attachment = readPicture("employee-1");
+			DB1.SaveAttachment(a, attachment);
+			try
+			{
+				DB1.SaveAttachment(emp.Data.GetAttachment("picture"), attachment);
+				Assert.IsTrue(false);
+			}
+			catch (ResponseException re)
+			{
+				Assert.AreEqual((int)re.Response.Status, 409);
+			}
+			DB1.SaveAttachment(a, attachment);
+			DB1.Refresh(emp);
+			a = emp.Data.GetAttachment("picture");
+			DB1.SaveAttachment(a, attachment);
+			byte[] db_attachment = DB1.ReadAttachment(a);
+			Assert.AreNotSame(db_attachment, DB1.ReadAttachment(a));
+			for(int i=0; i<attachment.Length;i++)
+			{
+				Assert.AreEqual(attachment[i],db_attachment[i]);
+			}
+			Assert.IsTrue(DB1.DeleteAttachment(a));
+			Assert.IsNull(DB1.ReadAttachment(a));
+		}
+		
+		byte[] readPicture(string id)
+		{
+			return File.ReadAllBytes(Environment.CurrentDirectory + "/Employees/" + id + ".jpg");
+		}
+		
+		[Test]
+		public void Updates()
+		{
+			var e = readEmployee("employee-1");
+			DB1.Create(e);
+			DB1.Create(readDocument("_design"));
+			DB1.Update("_design/design/_update/in_place", e.Id, new {param="foo", value="bar"});
+			DB1.Refresh(e);
+			Assert.AreEqual((string)e.Data["foo"], "bar");
 		}
 	}
 }
