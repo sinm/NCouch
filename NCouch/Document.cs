@@ -5,6 +5,8 @@ using System.Diagnostics;
 
 namespace NCouch
 {
+	//TODO: g_ move to IDictionary in castings + Base class with Parse alike for Dictionary based classes?
+	//TODO: tie on db?
 	[DebuggerDisplay ("{_id}@{_rev}")]
 	public class Document : Dictionary<string, object>, IData
 	{		

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Threading;
 
 namespace NCouch
 {
@@ -62,26 +63,24 @@ namespace NCouch
 			return result;
 		}
 		
-		//TODO: changes
 		//TODO: replication
 		//TODO: copy
-		//TODO: db info
-		//TODO: locals
+		//TODO: locals?
 		
-		public Response Update(string update_handler, string object_id, object args)
+		public string Update(string update_handler, string object_id, object args)
 		{
 			bool has_id = !String.IsNullOrEmpty(object_id);
 			Request request = Prepare(has_id? "PUT" : "POST", update_handler + (has_id? "/" + EscapePath(object_id) : ""));
 			request.JsonQuery = false;
 			request.SetQueryObject(args);
-			return request.Send();
+			return request.Send().Text;
 		}
 		
-		public Response Update(string update_handler, IData doc)
+		public string Update(string update_handler, IData doc)
 		{
 			Request request = Prepare("PUT", update_handler + "/" + EscapePath(doc.Data.Id));
 			request.SetObject(doc.Data);
-			return request.Send();
+			return request.Send().Text;
 		}
 			
 		public void Refresh(IData doc)
@@ -221,6 +220,70 @@ namespace NCouch
 		public static string EscapePath(string id)
 		{
 			return id.StartsWith("_design/")? id : id.Replace("/", "%2f");
+		}
+		
+		public void Changes(Feed feed, ChangesDelegate del)
+		{
+			new Thread(delegate () {
+				try
+				{
+					ChangeLog log = null;
+					Exception e;
+					do {
+						try
+						{
+							log = Changes(feed);
+							feed.since = log.last_seq;
+							e = null;
+						}
+						catch(Exception ex)
+						{
+							e = ex;
+						}
+					} while( del(this, e == null ? log : new ChangeLog(), e) );
+				}
+				catch(ThreadAbortException) {}
+			}).Start();
+		}
+		
+		public ChangeLog Changes(Feed feed)
+		{
+			Request request = Prepare("GET", "_changes");
+			request.JsonQuery = false;
+			request.Query["feed"] = feed.feed.ToString();
+			if (feed.timeout.HasValue && feed.feed != FeedMode.normal)
+				request.Query["timeout"] = feed.timeout <= 0 ? 60000 : feed.timeout;
+			if (feed.since.HasValue)
+				request.Query["since"] = feed.since < 0 ? 0 : feed.since;
+			if (feed.include_docs)
+				request.Query["include_docs"] = "true";
+			if (!String.IsNullOrEmpty(feed.filter))
+				request.Query["filter"] = feed.filter;
+			if (feed.limit.HasValue)
+				request.Query["limit"] = feed.limit < 0 ? 0 : feed.limit;
+
+			return new ChangeLog(
+				request.Send().GetObject() as Dictionary<string, object>);
+		}
+		
+		public DBInfo GetInfo()
+		{
+			try
+			{
+				return new DBInfo(Prepare("GET",String.Empty).Send().GetObject() 
+			                  as Dictionary<string, object>);
+			}
+			catch(ResponseException re)
+			{
+				if (re.Response.Status == HttpStatusCode.NotFound)
+					return null;
+				throw;
+			}
+		}
+		
+		public bool Exists()
+		{
+			return Prepare("HEAD", String.Empty).TrySend().Status == HttpStatusCode.OK;
 		}
 	}
 }

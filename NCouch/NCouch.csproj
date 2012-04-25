@@ -52,6 +52,8 @@
     <Compile Include="Row.cs" />
     <Compile Include="Attachment.cs" />
     <Compile Include="IData.cs" />
+    <Compile Include="Changes.cs" />
+    <Compile Include="DBInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
