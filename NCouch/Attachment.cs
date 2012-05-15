@@ -11,6 +11,9 @@ namespace NCouch
 		public string Name;
 		public string ContentType;
 		public long Length;
+		public int RevPos;
+		public bool Stub = true;
+		public byte[] Data;
 	}
 }
 

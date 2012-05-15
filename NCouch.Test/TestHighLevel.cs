@@ -9,7 +9,7 @@ using Employ.Model;
 
 namespace NCouch.Test
 {
-	//TODO: design doc (update handler)
+	//TODO: more tests
 	[TestFixture]
 	public class TestHighLevel
 	{
@@ -120,27 +120,32 @@ namespace NCouch.Test
 			{	
 				var att = e.Data.NewAttachment("picture", "image/jpg");
 				var rev = att.DocumentRev;
-				DB1.SaveAttachment(att, SampleData.readPicture(e.Id));
+				att.Data = SampleData.readPicture(e.Id);
+				DB1.SaveAttachment(att);
 				Assert.Greater(att.Length, 0);
 				Assert.AreNotEqual(rev, att.DocumentRev);
 			}	
 			var emp = DB1.Read<Employee>("employee-1");
 			var a = emp.Data.GetAttachment("picture");
 			byte[] attachment = SampleData.readPicture("employee-1");
-			DB1.SaveAttachment(a, attachment);
+			a.Data = attachment;
+			DB1.SaveAttachment(a);
 			try
 			{
-				DB1.SaveAttachment(emp.Data.GetAttachment("picture"), attachment);
+				var a2 = emp.Data.GetAttachment("picture");
+				a2.Data = attachment;
+				DB1.SaveAttachment(a2);
 				Assert.IsTrue(false);
 			}
 			catch (ResponseException re)
 			{
 				Assert.AreEqual((int)re.Response.Status, 409);
 			}
-			DB1.SaveAttachment(a, attachment);
+			DB1.SaveAttachment(a);
 			DB1.Refresh(emp);
 			a = emp.Data.GetAttachment("picture");
-			DB1.SaveAttachment(a, attachment);
+			a.Data = attachment;
+			DB1.SaveAttachment(a);
 			byte[] db_attachment = DB1.ReadAttachment(a);
 			Assert.AreNotSame(db_attachment, DB1.ReadAttachment(a));
 			for(int i=0; i<attachment.Length;i++)

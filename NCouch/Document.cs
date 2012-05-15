@@ -90,10 +90,31 @@ namespace NCouch
 					long length;
 					if(long.TryParse(att["length"].ToString(), out length))
 						result.Length = length;
+					int revpos;
+					if(int.TryParse(att["revpos"].ToString(), out revpos))
+						result.RevPos = revpos;
+					if(att.ContainsKey("data"))
+					{
+						result.Stub = false;
+						result.Data = Convert.FromBase64String(att["data"] as string);
+					}				
 					return result;
 				}
 			}
 			return null;
+		}
+		
+		public void SetInlineAttachments(IEnumerable<Attachment> attachments)
+		{
+			var atts = new Dictionary<string, object>();
+			this["_attachments"] = atts;
+			foreach(var attachment in attachments)
+			{
+				atts[attachment.Name] = new {
+					content_type = attachment.ContentType, 
+					data = Convert.ToBase64String(attachment.Data)
+				};
+			}
 		}
 		
 		public Attachment NewAttachment(string name, string content_type)

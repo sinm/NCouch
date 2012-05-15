@@ -96,18 +96,18 @@ namespace NCouch
 				doc.Data = new_data;
 			}
 		}
-		
+
 		public byte[] ReadAttachment(Attachment attachment)
 		{
-			Request request = Prepare("GET", EscapePath(attachment.DocumentId) + "/" + EscapePath(attachment.Name));
+			var request = Prepare("GET", EscapePath(attachment.DocumentId) + "/" + EscapePath(attachment.Name));
 			try
 			{
-				Response response = request.Send();
+				var response = request.Send();
 				attachment.ContentType = response.ContentType;
 				attachment.Length = response.Body.Length;
 				attachment.DocumentRev = response.GetUnquotedETag();
 				//Returning copy securing cache
-				byte[] result = new byte[response.Body.Length];
+				var result = new byte[response.Body.Length];
 				Buffer.BlockCopy(response.Body, 0, result, 0, result.Length);
 				return result;
 			}
@@ -139,15 +139,15 @@ namespace NCouch
 			}
 		}
 		
-		public void SaveAttachment(Attachment attachment, byte[] body)
+		public void SaveAttachment(Attachment attachment)
 		{
-			Request request = Prepare("PUT", EscapePath(attachment.DocumentId) + "/" + EscapePath(attachment.Name));
+			var request = Prepare("PUT", EscapePath(attachment.DocumentId) + "/" + EscapePath(attachment.Name));
 			request.ContentType = attachment.ContentType;
 			request.Query["rev"] = attachment.DocumentRev;
-			request.Body = body;
-			Response response = request.Send();
-			Dictionary<string, object> report = response.GetObject() as Dictionary<string, object>;
-			attachment.Length = body.Length;
+			request.Body = attachment.Data;
+			var response = request.Send();
+			var report = response.GetObject() as Dictionary<string, object>;
+			attachment.Length = attachment.Data.Length;
 			attachment.DocumentId = (string)report["id"];
 			attachment.DocumentRev = (string)report["rev"];
 		}
@@ -169,17 +169,29 @@ namespace NCouch
 		
 		public Document Read(string id)
 		{
-			return Read<Document>(id);
+			return Read<Document>(id, false);
 		}
 		
+		public Document Read(string id, bool include_attachments)
+		{
+			return Read<Document>(id);
+		}
+
 		public T Read<T>(string id) where T : IData, new()
+		{
+			return Read<T>(id, false);
+		}
+		
+		public T Read<T>(string id, bool include_attachments) where T : IData, new()
 		{
 			try
 			{
 				T obj = new T();
+				var request = Prepare("GET", EscapePath(id));
+				if (include_attachments)
+					request.Query["attachments"] = true;
 				obj.Data = new Document(
-					Prepare("GET", EscapePath(id))
-					.Send().GetObject() as Dictionary<string, object>);	
+					request.Send().GetObject() as Dictionary<string, object>);	
 				return obj;
 			}
 			catch(ResponseException re)
