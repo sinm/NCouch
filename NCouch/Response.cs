@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.IO;
 using System.Diagnostics;
+using System.Web.Script.Serialization;
 
 namespace NCouch
 {
@@ -10,6 +11,7 @@ namespace NCouch
 	{
 		public HttpStatusCode Status;
 		
+		[ScriptIgnore]
 		public bool IsCached 
 		{
 			get 
@@ -19,6 +21,10 @@ namespace NCouch
 		}
 		
 		internal long CacheIndex = 0;
+		
+		public Response()
+		{
+		}
 		
 		internal Response(HttpWebResponse response)
 		{

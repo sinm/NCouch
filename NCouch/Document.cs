@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Web.Script.Serialization;
 using System.Diagnostics;
+using System.IO;
 
 namespace NCouch
 {
@@ -14,6 +15,7 @@ namespace NCouch
 		{
 		}
 		
+		[ScriptIgnore]
 		public Document Data
 		{
 			get
@@ -72,6 +74,11 @@ namespace NCouch
 		public static Document Deserialize(string json)
 		{
 			return new Document((new JavaScriptSerializer()).DeserializeObject(json) as Dictionary<string, object>);
+		}
+		
+		public static Document FromFile(string path)
+		{
+			return Deserialize(File.ReadAllText(path));
 		}
 		
 		public Attachment GetAttachment(string name)

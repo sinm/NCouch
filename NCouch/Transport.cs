@@ -15,7 +15,10 @@ namespace NCouch
 				return ETag.Substring(1, ETag.Length-2);
 			return String.Empty;
 		}
+		
 		public byte[] Body;
+		
+		[ScriptIgnore]
 		public string Text
 		{
 			get
@@ -28,6 +31,7 @@ namespace NCouch
 			}
 		}
 		
+		[ScriptIgnore]
 		public long Size
 		{
 			get
