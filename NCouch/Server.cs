@@ -20,6 +20,7 @@ namespace NCouch
 		
 		public readonly string Uri;
 		public readonly Auth Auth;
+		public bool UseCache = true;
 		
 		Dictionary<string, DB> m_DBs = new Dictionary<string, DB>();
 		
@@ -96,7 +97,8 @@ namespace NCouch
 			return new Request {
 				Verb = verb,
 				Uri = Uri + path,
-				Auth = Auth
+				Auth = Auth,
+				UseCache = UseCache
 			};			
 		}
 	}

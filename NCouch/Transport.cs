@@ -95,8 +95,6 @@ namespace NCouch
 				return false;
 			}
 		}
-		
-		protected static ResponseCache Cache = new ResponseCache(Config.GetLong("ncouch.cache_size", 1048576 * 100));
 	}
 }
 

@@ -12,6 +12,8 @@ namespace NCouch
 	[DebuggerDisplay ("{Verb} {URL}")]
 	public class Request : Transport
 	{
+		static bool g_CacheTryOnFail = Config.GetBool("ncouch.cache_try_on_fail", false);
+		
 		public string Uri;
 		public string Verb
 		{
@@ -22,6 +24,8 @@ namespace NCouch
 		public Auth Auth;
 		
 		public Dictionary<string, object> Query = new Dictionary<string, object>();
+
+		public bool UseCache = true;
 		
 		public void SetQueryObject(object query)
 		{
@@ -146,9 +150,9 @@ namespace NCouch
 		public Response Send()
 		{
 			Response from_cache = null;
-			if (Verb == "GET")
+			if (UseCache && Verb == "GET")
 			{
-				from_cache = Cache.Get(URL);
+				from_cache = ResponseCache.Instance.Get(URL);
 				if (from_cache != null)
 				{
 					if (String.IsNullOrEmpty(ETag))
@@ -167,7 +171,13 @@ namespace NCouch
 			{				
 				response = ex.Response as HttpWebResponse;
 				if (response == null) 
-					throw;
+				{
+					//TODO: so we can cache 404? Need so?
+					if (UseCache && g_CacheTryOnFail && from_cache != null)
+						return from_cache;
+					else
+						throw;
+				}
 				else
 				{
 					if (response.StatusCode == HttpStatusCode.NotModified)
@@ -176,26 +186,29 @@ namespace NCouch
 							return from_cache;
 						else
 						{
-							from_cache = Cache.Get(URL);
+							from_cache = ResponseCache.Instance.Get(URL);
 							if (from_cache != null && from_cache.ETag == ETag)
 								return from_cache;
 						}
 					}
 					else
 					{
-						Cache.Remove(URL);
+						ResponseCache.Instance.Remove(URL);
 					}
 					throw new ResponseException(new Response(response));
 				}
 			}
 			Response res = new Response(response);
-			if ((Verb == "GET") && !String.IsNullOrEmpty(res.ETag))
+			if (UseCache)
 			{
-				Cache.Add(URL, res);
-			}
-			else if (Verb == "DELETE")
-			{
-				Cache.Remove(URL);
+				if ((Verb == "GET") && !String.IsNullOrEmpty(res.ETag))
+				{
+					ResponseCache.Instance.Add(URL, res);
+				}
+				else if (Verb == "DELETE")
+				{
+					ResponseCache.Instance.Remove(URL);
+				}
 			}
 			return res;		
 		}

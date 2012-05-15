@@ -1,20 +1,39 @@
 using System;
 using System.Collections.Generic;
 
+using System.Web.Script.Serialization;
+using System.IO;
+
 namespace NCouch
 {
 	public class ResponseCache
 	{
+		internal const long DEFAULT_SIZE = 1048576 * 100;
 		Dictionary<string, Response> m_Cache = new Dictionary<string, Response>();
 		SortedDictionary<long, string> m_Index = new SortedDictionary<long, string>();
-		long m_MaxSize;
+		long m_MaxSize = Config.GetLong("ncouch.cache_size", DEFAULT_SIZE);
+		string m_DumpFilename = Config.GetString("ncouch.cache_dump", String.Empty);
 		long m_LastIndex = 0;
 		long m_Size = 0;
 		object m_SyncRoot = new object();
 		
-		public ResponseCache (long max_size)
-		{	
-			m_MaxSize = max_size;
+		public static ResponseCache Instance
+		{
+			get {return g_Instance;}
+		} static ResponseCache g_Instance = new ResponseCache();
+		
+		ResponseCache()
+		{
+			if (!String.IsNullOrEmpty(m_DumpFilename) && File.Exists(m_DumpFilename))
+			{
+				var ser = new JavaScriptSerializer();
+				
+				var dic = ser.Deserialize<Dictionary<string, Response>>(File.ReadAllText(m_DumpFilename));
+				foreach(KeyValuePair<string, Response> kvp in dic)
+				{
+					Add (kvp.Key, kvp.Value);
+				}
+			}
 		}
 		
 		public void Clear()
@@ -84,9 +103,24 @@ namespace NCouch
 				response.CacheIndex = m_LastIndex;
 				m_Cache.Add(uri, response);
 				m_Index.Add(response.CacheIndex, uri);
+				
 				return true;
 			}
 		}		
+		
+		public void Dump()
+		{
+			if (String.IsNullOrEmpty(m_DumpFilename))
+				return;
+			lock(m_SyncRoot)
+			{
+				var ser = new JavaScriptSerializer();			
+				using (var writer = File.CreateText(m_DumpFilename))
+				{
+					writer.Write(ser.Serialize(m_Cache));
+				}
+			}
+		}
 	}
 }
 
