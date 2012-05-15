@@ -3,20 +3,13 @@ using System.IO;
 using NCouch;
 using System.Text;
 
-namespace NCouch.Test
+namespace Employ.Model
 {
 	public class Employee : IData
-	{		
-		/*public Employee (string id) : this(new Document(id))
-		{
-		}
-		
-		public Employee (Document doc)
-		{
-			Data = doc;
-		}*/
-		
+	{				
 		public Document Data {get; set;}
+		
+		public object Thumb;
 		
 		public string Id
 		{
@@ -42,6 +35,25 @@ namespace NCouch.Test
 			set {Data["lastName"] = value;}
 		}
 		
+		public string Department
+		{
+			get {return Data["department"] as string;}
+			set {Data["department"] = value;}
+		}
+		
+		public string Title
+		{
+			get {return Data["title"] as string;}
+			set {Data["title"] = value;}
+		}
+		
+		public string Name
+		{
+			get 
+			{
+				return String.Format("{0} {1}.", FirstName, LastName.Substring(0,1));
+			}
+		}
 	}
 }
 

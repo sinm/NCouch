@@ -9,11 +9,11 @@ namespace NCouch.Test
 	[TestFixture]
 	public class TestTransport
 	{
-		const string SERVER_URL = "http://127.0.0.1:3004/db";
+		const string SERVER_URL = "http://127.0.0.1:5984";//"http://127.0.0.1:3004/db";
 		const string DB_NAME = "ncouch-test";
 		const string DOC_ID = "ncouch-5";
 		
-		Auth AUTH = new BasicAuth("root@localhost", "1q2w3e4r");
+		Auth AUTH = null;//new BasicAuth("root@localhost", "1q2w3e4r");
 		
 		Request request;
 		Response response;

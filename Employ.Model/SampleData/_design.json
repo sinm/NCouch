@@ -1,0 +1,1 @@
+{"_id":"_design/design","updates":{"in_place":"function(doc,req){doc[req.query.param] = req.query.value; log(doc); return [doc, 'OK']}"}}

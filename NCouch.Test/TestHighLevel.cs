@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Reflection;
+using Employ.Model;
 
 namespace NCouch.Test
 {
@@ -50,7 +51,7 @@ namespace NCouch.Test
 		{			
 			string id = "employee-1";
 			string new_name = "Foo";
-			Employee e1_1 = readEmployee(id);
+			Employee e1_1 = SampleData.readEmployee(id);
 			
 			Assert.AreEqual(e1_1.Id, id);
 			Assert.AreNotEqual(e1_1.FirstName, new_name);
@@ -105,23 +106,9 @@ namespace NCouch.Test
 			var docs = new List<Employee>();
 			for(int i=1; i<= 12; i++)
 			{
-				docs.Add(readEmployee("employee-"+i.ToString()));
+				docs.Add(SampleData.readEmployee("employee-"+i.ToString()));
 			}
 			return DB1._bulk_docs<Employee>(docs, out conflicts);
-		}
-		
-		Employee readEmployee(string id)
-		{
-			Employee e = new Employee();
-			e.Data = readDocument(id);
-			return e;
-		}
-		
-		Document readDocument(string id)
-		{
-			return Document.Deserialize(
-					File.ReadAllText(
-						Environment.CurrentDirectory + "/Employees/" + id + ".json"));
 		}
 		
 		[Test]
@@ -133,13 +120,13 @@ namespace NCouch.Test
 			{	
 				var att = e.Data.NewAttachment("picture", "image/jpg");
 				var rev = att.DocumentRev;
-				DB1.SaveAttachment(att, readPicture(e.Id));
+				DB1.SaveAttachment(att, SampleData.readPicture(e.Id));
 				Assert.Greater(att.Length, 0);
 				Assert.AreNotEqual(rev, att.DocumentRev);
 			}	
 			var emp = DB1.Read<Employee>("employee-1");
 			var a = emp.Data.GetAttachment("picture");
-			byte[] attachment = readPicture("employee-1");
+			byte[] attachment = SampleData.readPicture("employee-1");
 			DB1.SaveAttachment(a, attachment);
 			try
 			{
@@ -164,17 +151,12 @@ namespace NCouch.Test
 			Assert.IsNull(DB1.ReadAttachment(a));
 		}
 		
-		byte[] readPicture(string id)
-		{
-			return File.ReadAllBytes(Environment.CurrentDirectory + "/Employees/" + id + ".jpg");
-		}
-		
 		[Test]
 		public void Updates()
 		{
-			var e = readEmployee("employee-1");
+			var e = SampleData.readEmployee("employee-1");
 			DB1.Create(e);
-			DB1.Create(readDocument("_design"));
+			DB1.Create(SampleData.readDocument("_design"));
 			DB1.Update("_design/design/_update/in_place", e.Id, new {param="foo", value="bar"});
 			DB1.Refresh(e);
 			Assert.AreEqual((string)e.Data["foo"], "bar");

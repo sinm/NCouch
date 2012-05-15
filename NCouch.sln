@@ -5,13 +5,27 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NCouch", "NCouch\NCouch.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NCouch.Test", "NCouch.Test\NCouch.Test.csproj", "{6CC96251-A46C-4F86-9714-8096152BB8C2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Employ.Model", "Employ.Model\Employ.Model.csproj", "{4D71FB31-539E-430C-9AE0-8E2A9D8ED69B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 		Default|Any CPU = Default|Any CPU
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4D71FB31-539E-430C-9AE0-8E2A9D8ED69B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D71FB31-539E-430C-9AE0-8E2A9D8ED69B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D71FB31-539E-430C-9AE0-8E2A9D8ED69B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4D71FB31-539E-430C-9AE0-8E2A9D8ED69B}.Debug|x86.Build.0 = Debug|Any CPU
+		{4D71FB31-539E-430C-9AE0-8E2A9D8ED69B}.Default|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D71FB31-539E-430C-9AE0-8E2A9D8ED69B}.Default|Any CPU.Build.0 = Debug|Any CPU
+		{4D71FB31-539E-430C-9AE0-8E2A9D8ED69B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D71FB31-539E-430C-9AE0-8E2A9D8ED69B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D71FB31-539E-430C-9AE0-8E2A9D8ED69B}.Release|x86.ActiveCfg = Release|Any CPU
+		{4D71FB31-539E-430C-9AE0-8E2A9D8ED69B}.Release|x86.Build.0 = Release|Any CPU
 		{5FC9FE73-0294-4879-B5E2-17072664B84D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5FC9FE73-0294-4879-B5E2-17072664B84D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5FC9FE73-0294-4879-B5E2-17072664B84D}.Release|Any CPU.ActiveCfg = Release|Any CPU
