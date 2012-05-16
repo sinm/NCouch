@@ -81,7 +81,7 @@ namespace NCouch
 		{
 			get
 			{
-				return ContainsKey("doc") ? new Document(this["doc"] as Dictionary<string, object>) : null;
+				return ContainsKey("doc") ? Document.FromHash(this["doc"] as Dictionary<string, object>) : null;
 			}
 		}
 		

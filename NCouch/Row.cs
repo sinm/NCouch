@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace NCouch
 {
-	public class Row<T> where T: IData, new()
+	public class Row<T> where T: class, IData, new()
 	{
 		public Row(Dictionary<string, object> source)
 		{
@@ -24,8 +24,7 @@ namespace NCouch
 			{
 				if (test != null)
 				{
-					doc = new T();
-					doc.Data = new Document(test as Dictionary<string, object>);
+					doc = Document.FromHash<T>(test as Dictionary<string, object>);
 				}
 			}
 		}

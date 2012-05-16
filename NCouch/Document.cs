@@ -9,7 +9,7 @@ namespace NCouch
 	//TODO: g_ move to IDictionary in castings + Base class with Parse alike for Dictionary based classes?
 	//TODO: tie on db?
 	[DebuggerDisplay ("{_id}@{_rev}")]
-	public class Document : Dictionary<string, object>, IData
+	public sealed class Document : Dictionary<string, object>, IData
 	{		
 		public Document() : base()
 		{
@@ -24,22 +24,11 @@ namespace NCouch
 			}
 			set
 			{
-				Clear();
-				if (value == null)
-					return;
-				foreach(KeyValuePair<string, object> kvp in value)
-				{
-					this[kvp.Key] = kvp.Value;
-				}
+				throw new InvalidOperationException("Can't call set_Data on Document instance! Use FromHash<T> as a factory.");
 			}
 		}
 		
-		public Document (string id) : base()
-		{
-			this["_id"] = id;
-		}
-		
-		public Document (Dictionary<string, object> content) : base(content)
+		private Document (Dictionary<string, object> content) : base(content)
 		{
 		}
 		
@@ -140,6 +129,23 @@ namespace NCouch
 				}
 			}
 			return atts;
+		}
+		
+		public static T FromHash<T>(Dictionary<string, object> hash) where T : class, IData, new()
+		{
+			var obj = new Document(hash);
+			if (typeof(T) == typeof(Document))
+				return obj as T;
+			else {
+				T t_obj = new T();
+				t_obj.Data = obj;
+				return t_obj;
+			};
+		}
+		
+		public static Document FromHash(Dictionary<string, object> hash)
+		{
+			return FromHash<Document>(hash);
 		}
 	}
 }

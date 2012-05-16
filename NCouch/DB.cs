@@ -93,7 +93,14 @@ namespace NCouch
 			}
 			else
 			{
-				doc.Data = new_data;
+				var document = doc as Document;				
+				if (document != null) {
+					document.Clear();
+					foreach(KeyValuePair<string, object> kvp in new_data) {
+						document[kvp.Key] = kvp.Value;
+					}
+				} else
+					doc.Data = new_data;
 			}
 		}
 
@@ -177,22 +184,20 @@ namespace NCouch
 			return Read<Document>(id);
 		}
 
-		public T Read<T>(string id) where T : IData, new()
+		public T Read<T>(string id) where T : class, IData, new()
 		{
 			return Read<T>(id, false);
 		}
 		
-		public T Read<T>(string id, bool include_attachments) where T : IData, new()
+		public T Read<T>(string id, bool attachments) where T : class, IData, new()
 		{
 			try
 			{
-				T obj = new T();
 				var request = Prepare("GET", EscapePath(id));
-				if (include_attachments)
+				if (attachments)
 					request.Query["attachments"] = true;
-				obj.Data = new Document(
-					request.Send().GetObject() as Dictionary<string, object>);	
-				return obj;
+				var response = request.Send().GetObject() as Dictionary<string, object>;
+				return Document.FromHash<T>(response);
 			}
 			catch(ResponseException re)
 			{

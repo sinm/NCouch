@@ -3,6 +3,10 @@ using System.Collections.Generic;
 
 namespace NCouch
 {
+	/// <summary>
+	/// View.
+	/// You may want to use Query object whenever query parameter is required
+	/// </summary>
 	public class View
 	{
 		public View (DB db, string name)
@@ -35,7 +39,7 @@ namespace NCouch
 			return Execute<Document>(query);
 		}
 		
-		List<Row<T>> Execute<T>(object query) where T : IData, new()
+		List<Row<T>> Execute<T>(object query) where T : class, IData, new()
 		{
 			if (query as Query != null)
 				query = ((Query)query).ToDictionary();
@@ -51,7 +55,7 @@ namespace NCouch
 			return result;
 		}
 		
-		public List<T> ListDocuments<T>(object query) where T : IData, new()
+		public List<T> ListDocuments<T>(object query) where T : class, IData, new()
 		{
 			if (query as Query != null)
 				query = ((Query)query).ToDictionary();
@@ -61,12 +65,9 @@ namespace NCouch
 			Response response = request.Send();
 			object[] array = (object[])response.Parse("rows");
 			List<T> result = new List<T>();
-			T obj;
 			foreach(Dictionary<string,object> dict in array)
 			{
-				obj = new T();
-				obj.Data = new Document(dict["doc"] as Dictionary<string,object>);
-				result.Add(obj);
+				result.Add(Document.FromHash<T>(dict["doc"] as Dictionary<string,object>));
 			}
 			return result;			
 		}
