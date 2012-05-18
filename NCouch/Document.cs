@@ -1,8 +1,10 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Web.Script.Serialization;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 
 namespace NCouch
 {
@@ -13,7 +15,10 @@ namespace NCouch
 	{		
 		public Document() : base()
 		{
+			InlineAttachments = false;
 		}
+		
+		public DB DB {get; internal set;}
 		
 		[ScriptIgnore]
 		public Document Data
@@ -30,6 +35,17 @@ namespace NCouch
 		
 		private Document (Dictionary<string, object> content) : base(content)
 		{
+			InlineAttachments = containsInlineAttachment();
+		}
+		
+		public bool InlineAttachments {get; private set;}
+		
+		bool containsInlineAttachment()
+		{
+			if (this["_attachments"] != null)
+				foreach(KeyValuePair<string, object> kvp in this["_attachments"])
+					return ((IDictionary)kvp.Value).Contains("data");
+			return false;
 		}
 		
 		[ScriptIgnore]
@@ -70,15 +86,84 @@ namespace NCouch
 			return Deserialize(File.ReadAllText(path));
 		}
 		
+		public Request Prepare(string verb)
+		{
+			return DB.Prepare(verb, DB.EscapePath(Id));
+		}
+		
+		#region CRUD
+		public string Update(string updateHandler)
+		{
+			Request request = DB.Prepare("PUT", updateHandler + "/" + DB.EscapePath(Id));
+			request.SetObject(this);
+			return request.Send().Text;
+		}
+		
+		/// <summary>
+		/// Refresh this instance.
+		/// </summary>
+		/// <returns>
+		/// false if deleted
+		/// </returns>
+		public bool Refresh()
+		{
+			try
+			{
+				var request = Prepare("GET");
+				if (InlineAttachments)
+					request.Query["attachments"] = true;
+				var response = request.Send().GetObject() as Dictionary<string, object>;
+				Clear();
+				foreach(KeyValuePair<string, object> kvp in response) {
+					this[kvp.Key] = kvp.Value;
+				}
+				return true;
+			}
+			catch(ResponseException re)
+			{
+				if (re.Response.Status == HttpStatusCode.NotFound)
+					return false;
+				else
+					throw;
+			}
+		}
+		
+		public void Update()
+		{
+			var request = Prepare("PUT");
+			request.SetObject(this);
+			Rev = request.Send().Parse("rev") as string;				
+		}
+		
+		public bool Delete()
+		{
+			var request = Prepare("DELETE");
+			request.SetQueryObject(new {rev = Rev});
+			try
+			{
+				Rev = request.Send().Parse("rev") as string;	
+				return true;
+			}
+			catch(ResponseException re)
+			{
+				if (re.Response.Status != HttpStatusCode.NotFound)
+					throw;
+				return false;
+			}
+			
+		}
+		#endregion
+		
 		public Attachment GetAttachment(string name)
 		{
-			Attachment result = new Attachment();
-			result.DocumentId = Id;
-			result.DocumentRev = Rev;
-			result.Name = name;
+			var result = new Attachment{
+				DocumentId = Id,
+				DocumentRev = Rev,
+				Name = name
+			};
 			if (this["_attachments"] != null)
 			{
-				Dictionary<string, object> att = 
+				var att = 
 					((Dictionary<string, object>)this["_attachments"])[name] as Dictionary<string, object>;
 				if (att != null)
 				{
@@ -111,6 +196,7 @@ namespace NCouch
 					data = Convert.ToBase64String(attachment.Data)
 				};
 			}
+			InlineAttachments = true;
 		}
 		
 		public Attachment NewAttachment(string name, string content_type)
@@ -131,9 +217,10 @@ namespace NCouch
 			return atts;
 		}
 		
-		public static T FromHash<T>(Dictionary<string, object> hash) where T : class, IData, new()
+		public static T FromHash<T>(Dictionary<string, object> hash, DB db) where T : class, IData, new()
 		{
 			var obj = new Document(hash);
+			obj.DB = db;
 			if (typeof(T) == typeof(Document))
 				return obj as T;
 			else {
@@ -143,9 +230,9 @@ namespace NCouch
 			};
 		}
 		
-		public static Document FromHash(Dictionary<string, object> hash)
+		public static Document FromHash(Dictionary<string, object> hash, DB db)
 		{
-			return FromHash<Document>(hash);
+			return FromHash<Document>(hash, db);
 		}
 	}
 }

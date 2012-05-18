@@ -6,6 +6,7 @@ using System.IO;
 using System.Text;
 using System.Reflection;
 using Employ.Model;
+using System.Threading;
 
 namespace NCouch.Test
 {
@@ -62,7 +63,7 @@ namespace NCouch.Test
 			Assert.IsNotNull(old_rev);			
 			
 			e1_1.FirstName = new_name;			
-			DB1.Update(e1_1);
+			e1_1.Data.Update();
 			Assert.IsNotNull(e1_1.Data.Rev);
 			Assert.AreNotEqual(old_rev, e1_1.Data.Rev);
 			
@@ -71,13 +72,14 @@ namespace NCouch.Test
 			Assert.AreEqual(e1_1.FirstName, e1_2.FirstName);
 			
 			e1_1.FirstName = String.Empty;
-			DB1.Update(e1_1);
+			e1_1.Data.Update();
+
 			Assert.AreNotEqual(e1_1.FirstName, e1_2.FirstName);
-			DB1.Refresh(e1_2);
+			e1_2.Data.Refresh();
 			Assert.AreEqual(e1_1.FirstName, e1_2.FirstName);
 			
-			DB1.Delete(e1_1);
-			DB1.Refresh(e1_2);
+			e1_2.Data.Delete();
+			e1_2.Data.Refresh();
 			Assert.IsNull(e1_2.Id);
 		}
 		
@@ -96,7 +98,8 @@ namespace NCouch.Test
 		{
 			List<Employee> conflicts;
 			Assert.IsTrue(bulk_insert(out conflicts));
-			Assert.IsTrue(DB1.Delete(DB1.Read("employee-1")));
+			var emp = DB1.Read("employee-1");
+			Assert.IsTrue(emp.Delete());
 			Assert.IsFalse(bulk_insert(out conflicts));
 			Assert.AreEqual(conflicts.Count, 11);
 		}
@@ -142,7 +145,7 @@ namespace NCouch.Test
 				Assert.AreEqual((int)re.Response.Status, 409);
 			}
 			DB1.SaveAttachment(a);
-			DB1.Refresh(emp);
+			emp.Data.Refresh();
 			a = emp.Data.GetAttachment("picture");
 			a.Data = attachment;
 			DB1.SaveAttachment(a);
@@ -163,8 +166,43 @@ namespace NCouch.Test
 			DB1.Create(e);
 			DB1.Create(SampleData.readDocument("_design"));
 			DB1.Update("_design/design/_update/in_place", e.Id, new {param="foo", value="bar"});
-			DB1.Refresh(e);
+			e.Data.Refresh();
 			Assert.AreEqual((string)e.Data["foo"], "bar");
+		}
+		
+		[Test]
+		public void Changes()
+		{
+			var e = SampleData.readEmployee(listen_id);
+			DB1.Create(e);
+			listen_count = 0;
+			var info = DB1.GetInfo();
+			DB1.Changes(new Feed{feed = FeedMode.longpoll, since = info.update_seq}, listen);
+			e.LastName += "x";
+			e.Data.Update();
+			e.LastName += "x";
+			e.Data.Update();
+			e.LastName += "x";
+			e.Data.Update();
+			for(int i=0; i<200;i++)
+				Thread.Sleep(10);
+			Assert.AreEqual(listen_count, 3);
+		}
+		
+		int listen_count = 0;
+		int listen_max_count = 3;
+		string listen_id = "employee-1";
+		
+		bool listen(ChangeLog log, Exception ex) 
+		{
+			if (ex != null)
+				return false;
+			foreach(Change change in log.results)
+			{
+				if (change.id == listen_id)
+					listen_count++;
+			}
+			return listen_count < listen_max_count;
 		}
 	}
 }

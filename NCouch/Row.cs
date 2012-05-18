@@ -5,7 +5,7 @@ namespace NCouch
 {
 	public class Row<T> where T: class, IData, new()
 	{
-		public Row(Dictionary<string, object> source)
+		public Row(Dictionary<string, object> source, DB db)
 		{
 			object test;
 			if (source.TryGetValue("key", out test))
@@ -24,7 +24,7 @@ namespace NCouch
 			{
 				if (test != null)
 				{
-					doc = Document.FromHash<T>(test as Dictionary<string, object>);
+					doc = Document.FromHash<T>(test as Dictionary<string, object>, db);
 				}
 			}
 		}

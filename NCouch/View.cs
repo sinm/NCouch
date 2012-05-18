@@ -50,7 +50,7 @@ namespace NCouch
 			List<Row<T>> result = new List<Row<T>>();
 			foreach(Dictionary<string,object> dict in array)
 			{
-				result.Add(new Row<T>(dict));
+				result.Add(new Row<T>(dict, DB));
 			}
 			return result;
 		}
@@ -67,7 +67,7 @@ namespace NCouch
 			List<T> result = new List<T>();
 			foreach(Dictionary<string,object> dict in array)
 			{
-				result.Add(Document.FromHash<T>(dict["doc"] as Dictionary<string,object>));
+				result.Add(Document.FromHash<T>(dict["doc"] as Dictionary<string,object>, DB));
 			}
 			return result;			
 		}
