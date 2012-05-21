@@ -43,20 +43,20 @@ namespace NCouch
 		bool containsInlineAttachment()
 		{
 			if (this["_attachments"] != null)
-				foreach(KeyValuePair<string, object> kvp in this["_attachments"])
+				foreach(KeyValuePair<string, object> kvp in (Dictionary<string, object>)this["_attachments"])
 					return ((IDictionary)kvp.Value).Contains("data");
 			return false;
 		}
 		
 		[ScriptIgnore]
-		public string Id
+		public string _id
 		{
 			get { return this["_id"] as string; } 
 			set { this["_id"] = value; }
 		}
 		
 		[ScriptIgnore]
-		public string Rev 
+		public string _rev 
 		{
 			get { return this["_rev"] as string; } 
 			set { this["_rev"] = value; }
@@ -88,13 +88,13 @@ namespace NCouch
 		
 		public Request Prepare(string verb)
 		{
-			return DB.Prepare(verb, DB.EscapePath(Id));
+			return DB.Prepare(verb, DB.EscapePath(_id));
 		}
 		
 		#region CRUD
 		public string Update(string updateHandler)
 		{
-			Request request = DB.Prepare("PUT", updateHandler + "/" + DB.EscapePath(Id));
+			Request request = DB.Prepare("PUT", updateHandler + "/" + DB.EscapePath(_id));
 			request.SetObject(this);
 			return request.Send().Text;
 		}
@@ -132,16 +132,16 @@ namespace NCouch
 		{
 			var request = Prepare("PUT");
 			request.SetObject(this);
-			Rev = request.Send().Parse("rev") as string;				
+			_rev = request.Send().Parse("rev") as string;				
 		}
 		
 		public bool Delete()
 		{
 			var request = Prepare("DELETE");
-			request.SetQueryObject(new {rev = Rev});
+			request.SetQueryObject(new {rev = _rev});
 			try
 			{
-				Rev = request.Send().Parse("rev") as string;	
+				_rev = request.Send().Parse("rev") as string;	
 				return true;
 			}
 			catch(ResponseException re)
@@ -157,8 +157,8 @@ namespace NCouch
 		public Attachment GetAttachment(string name)
 		{
 			var result = new Attachment{
-				DocumentId = Id,
-				DocumentRev = Rev,
+				DocumentId = _id,
+				DocumentRev = _rev,
 				Name = name
 			};
 			if (this["_attachments"] != null)
@@ -167,17 +167,17 @@ namespace NCouch
 					((Dictionary<string, object>)this["_attachments"])[name] as Dictionary<string, object>;
 				if (att != null)
 				{
-					result.ContentType = att["content_type"] as string;
+					result.content_type = att["content_type"] as string;
 					long length;
 					if(long.TryParse(att["length"].ToString(), out length))
-						result.Length = length;
+						result.length = length;
 					int revpos;
 					if(int.TryParse(att["revpos"].ToString(), out revpos))
-						result.RevPos = revpos;
+						result.revpos = revpos;
 					if(att.ContainsKey("data"))
 					{
-						result.Stub = false;
-						result.Data = Convert.FromBase64String(att["data"] as string);
+						result.stub = false;
+						result.data = Convert.FromBase64String(att["data"] as string);
 					}				
 					return result;
 				}
@@ -192,8 +192,8 @@ namespace NCouch
 			foreach(var attachment in attachments)
 			{
 				atts[attachment.Name] = new {
-					content_type = attachment.ContentType, 
-					data = Convert.ToBase64String(attachment.Data)
+					content_type = attachment.content_type, 
+					data = Convert.ToBase64String(attachment.data)
 				};
 			}
 			InlineAttachments = true;
@@ -201,7 +201,7 @@ namespace NCouch
 		
 		public Attachment NewAttachment(string name, string content_type)
 		{
-			return new Attachment {Name = name, DocumentId = Id, DocumentRev = Rev, ContentType = content_type};
+			return new Attachment {Name = name, DocumentId = _id, DocumentRev = _rev, content_type = content_type};
 		}
 		
 		public List<Attachment> GetAttachments()

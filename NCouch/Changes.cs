@@ -4,6 +4,12 @@ using System.Collections.Generic;
 
 namespace NCouch
 {
+	/// <summary>
+	/// Changes delegate.
+	/// </summary>
+	/// <param name="ex">
+	/// Exception that had been thrown while getting log. Log is null if ex present.
+	/// </param>
 	public delegate bool ChangesDelegate(ChangeLog log, Exception ex);
 	
 	public enum FeedMode {normal, longpoll}
@@ -35,11 +41,13 @@ namespace NCouch
 		}
 	}
 	
-	public class ChangeLog : Dictionary<string, object>
+	public class ChangeLog
 	{
+		public readonly long last_seq;		
+		public readonly List<Change> results = new List<Change>();
 		public readonly DB DB;
 		
-		public ChangeLog(Dictionary<string, object> dict, DB db) : base(dict)
+		public ChangeLog(Dictionary<string, object> dict, DB db)
 		{
 			DB = db;
 			var r = dict["results"] as object[];
@@ -47,68 +55,29 @@ namespace NCouch
 			{
 				results.Add(new Change(o, DB));
 			}
+			last_seq = long.Parse(dict["last_seq"].ToString());
 		}
-		
-		public long last_seq
-		{
-			get
-			{
-				return long.Parse(this["last_seq"].ToString());
-			}
-		}
-		
-		public List<Change> results = new List<Change>();
 	}
 	
-	public class Change : Dictionary<string, object>
+	public class Change
 	{
-		public long seq
-		{
-			get
-			{
-				return long.Parse(this["seq"].ToString());
-			}
-		}
+		public readonly long seq;
+		public readonly string id;
+		public readonly string rev;		
+		public readonly bool deleted;
+		public readonly Document doc;		
+		public readonly DB DB;
 		
-		public string id
-		{
-			get
-			{
-				return (string)this["id"];
-			}
-		}
-		
-		public string rev
-		{
-			get
-			{
-				var d = ((object[])this["changes"])[0] as IDictionary;
-				return d.Contains("rev") ? (string)d["rev"] : String.Empty;
-			}
-		}
-		
-		public bool deleted
-		{
-			get
-			{
-				return (bool)this["deleted"];
-			}
-		}
-		
-		public IData doc
-		{
-			get
-			{
-				return ContainsKey("doc") ? 
-					Document.FromHash(this["doc"] as Dictionary<string, object>, DB) : null;
-			}
-		}
-		
-		DB DB;
-		
-		public Change(Dictionary<string, object> dict, DB db) : base(dict)
+		public Change(Dictionary<string, object> dict, DB db)
 		{
 			DB = db;
+			seq = long.Parse(dict["seq"].ToString());
+			id = (string)dict["id"];
+			var d = ((object[])dict["changes"])[0] as IDictionary;
+			rev = d.Contains("rev") ? (string)d["rev"] : String.Empty;
+			deleted = (bool)dict["deleted"];
+			doc = dict.ContainsKey("doc") ? 
+				Document.FromHash(dict["doc"] as Dictionary<string, object>, DB) : null;
 		}
 	}
 }

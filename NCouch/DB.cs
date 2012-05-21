@@ -56,8 +56,8 @@ namespace NCouch
 				}
 				else
 				{
-					docs[index].Data.Id = (string)report["id"];
-					docs[index].Data.Rev = (string)report["rev"];
+					docs[index].Data._id = (string)report["id"];
+					docs[index].Data._rev = (string)report["rev"];
 				}
 			}
 			return result;
@@ -93,8 +93,8 @@ namespace NCouch
 			try
 			{
 				var response = request.Send();
-				attachment.ContentType = response.ContentType;
-				attachment.Length = response.Body.Length;
+				attachment.content_type = response.ContentType;
+				attachment.length = response.Body.Length;
 				attachment.DocumentRev = response.GetUnquotedETag();
 				//Returning copy securing cache
 				var result = new byte[response.Body.Length];
@@ -132,12 +132,12 @@ namespace NCouch
 		public void SaveAttachment(Attachment attachment)
 		{
 			var request = Prepare("PUT", EscapePath(attachment.DocumentId) + "/" + EscapePath(attachment.Name));
-			request.ContentType = attachment.ContentType;
+			request.ContentType = attachment.content_type;
 			request.Query["rev"] = attachment.DocumentRev;
-			request.Body = attachment.Data;
+			request.Body = attachment.data;
 			var response = request.Send();
 			var report = response.GetObject() as Dictionary<string, object>;
-			attachment.Length = attachment.Data.Length;
+			attachment.length = attachment.data.Length;
 			attachment.DocumentId = (string)report["id"];
 			attachment.DocumentRev = (string)report["rev"];
 		}
@@ -146,15 +146,15 @@ namespace NCouch
 		public void Create(IData doc)
 		{
 			Request request;
-			if (doc.Data.Id == null)
+			if (doc.Data._id == null)
 				request = Prepare("POST", String.Empty);
 			else
-				request = Prepare("PUT", EscapePath(doc.Data.Id));
+				request = Prepare("PUT", EscapePath(doc.Data._id));
 			request.SetObject(doc.Data);
 			Dictionary<string, object> report = (Dictionary<string, object>)request.Send().GetObject();
-			doc.Data.Rev = (string)report["rev"];
-			if (doc.Data.Id == null)
-				doc.Data.Id = (string)report["id"];
+			doc.Data._rev = (string)report["rev"];
+			if (doc.Data._id == null)
+				doc.Data._id = (string)report["id"];
 			doc.Data.DB = this;
 		}
 		
@@ -227,7 +227,7 @@ namespace NCouch
 		
 		public ChangeLog Changes(Feed feed)
 		{
-			Request request = Prepare("GET", "_changes");
+			var request = Prepare("GET", "_changes");
 			request.JsonQuery = false;
 			request.Query = feed.ToDictionary();
 			return new ChangeLog(request.Send().GetObject() as Dictionary<string, object>, this);

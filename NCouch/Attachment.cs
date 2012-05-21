@@ -9,11 +9,11 @@ namespace NCouch
 		public string DocumentId;
 		public string DocumentRev;
 		public string Name;
-		public string ContentType;
-		public long Length;
-		public int RevPos;
-		public bool Stub = true;
-		public byte[] Data;
+		public string content_type;
+		public long length;
+		public int revpos;
+		public bool stub = true;
+		public byte[] data;
 	}
 }
 

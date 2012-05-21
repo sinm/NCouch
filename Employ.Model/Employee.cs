@@ -13,8 +13,8 @@ namespace Employ.Model
 		
 		public string Id
 		{
-			get {return Data.Id;}
-			set {Data.Id = value;}
+			get {return Data._id;}
+			set {Data._id = value;}
 		}
 		
 		public string ManagerId

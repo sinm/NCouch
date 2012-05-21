@@ -56,19 +56,19 @@ namespace NCouch.Test
 			
 			Assert.AreEqual(e1_1.Id, id);
 			Assert.AreNotEqual(e1_1.FirstName, new_name);
-			Assert.IsNull(e1_1.Data.Rev);
+			Assert.IsNull(e1_1.Data._rev);
 			
 			DB1.Create(e1_1);
-			string old_rev = e1_1.Data.Rev;
+			string old_rev = e1_1.Data._rev;
 			Assert.IsNotNull(old_rev);			
 			
 			e1_1.FirstName = new_name;			
 			e1_1.Data.Update();
-			Assert.IsNotNull(e1_1.Data.Rev);
-			Assert.AreNotEqual(old_rev, e1_1.Data.Rev);
+			Assert.IsNotNull(e1_1.Data._rev);
+			Assert.AreNotEqual(old_rev, e1_1.Data._rev);
 			
 			Employee e1_2 = DB1.Read<Employee>(id);
-			Assert.AreEqual(e1_1.Data.Rev, e1_2.Data.Rev);
+			Assert.AreEqual(e1_1.Data._rev, e1_2.Data._rev);
 			Assert.AreEqual(e1_1.FirstName, e1_2.FirstName);
 			
 			e1_1.FirstName = String.Empty;
@@ -79,8 +79,7 @@ namespace NCouch.Test
 			Assert.AreEqual(e1_1.FirstName, e1_2.FirstName);
 			
 			e1_2.Data.Delete();
-			e1_2.Data.Refresh();
-			Assert.IsNull(e1_2.Id);
+			Assert.IsFalse(e1_2.Data.Refresh());
 		}
 		
 		[Test]
@@ -88,9 +87,9 @@ namespace NCouch.Test
 		{
 			List<Employee> conflicts;
 			Assert.IsTrue(bulk_insert(out conflicts));
-			var rows1 = DB1/"_all_docs"/new Query {include_docs=true, key="employee-12"};
-			var rows2 = DB1/"_all_docs"/new {keys=new object[]{"employee-12"}};
-			Assert.AreEqual(rows1[0].doc.Id, rows2[0].key);
+			var rows1 = (DB1/"_all_docs").ListRows(new Query {include_docs=true, key="employee-12"});
+			var rows2 = (DB1/"_all_docs").ListRows(new {keys=new object[]{"employee-12"}});
+			Assert.AreEqual(rows1[0].doc._id, rows2[0].key);
 		}
 		
 		[Test]
@@ -123,20 +122,20 @@ namespace NCouch.Test
 			{	
 				var att = e.Data.NewAttachment("picture", "image/jpg");
 				var rev = att.DocumentRev;
-				att.Data = SampleData.readPicture(e.Id);
+				att.data = SampleData.readPicture(e.Id);
 				DB1.SaveAttachment(att);
-				Assert.Greater(att.Length, 0);
+				Assert.Greater(att.length, 0);
 				Assert.AreNotEqual(rev, att.DocumentRev);
 			}	
 			var emp = DB1.Read<Employee>("employee-1");
 			var a = emp.Data.GetAttachment("picture");
 			byte[] attachment = SampleData.readPicture("employee-1");
-			a.Data = attachment;
+			a.data = attachment;
 			DB1.SaveAttachment(a);
 			try
 			{
 				var a2 = emp.Data.GetAttachment("picture");
-				a2.Data = attachment;
+				a2.data = attachment;
 				DB1.SaveAttachment(a2);
 				Assert.IsTrue(false);
 			}
@@ -147,7 +146,7 @@ namespace NCouch.Test
 			DB1.SaveAttachment(a);
 			emp.Data.Refresh();
 			a = emp.Data.GetAttachment("picture");
-			a.Data = attachment;
+			a.data = attachment;
 			DB1.SaveAttachment(a);
 			byte[] db_attachment = DB1.ReadAttachment(a);
 			Assert.AreNotSame(db_attachment, DB1.ReadAttachment(a));
@@ -184,6 +183,7 @@ namespace NCouch.Test
 			e.Data.Update();
 			e.LastName += "x";
 			e.Data.Update();
+			
 			for(int i=0; i<200;i++)
 				Thread.Sleep(10);
 			Assert.AreEqual(listen_count, 3);
