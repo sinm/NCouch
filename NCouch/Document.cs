@@ -8,8 +8,6 @@ using System.Net;
 
 namespace NCouch
 {
-	//TODO: g_ move to IDictionary in castings + Base class with Parse alike for Dictionary based classes?
-	//TODO: tie on db?
 	[DebuggerDisplay ("{_id}@{_rev}")]
 	public sealed class Document : Dictionary<string, object>, IData
 	{		
@@ -62,6 +60,13 @@ namespace NCouch
 			set { this["_rev"] = value; }
 		}
 		
+		[ScriptIgnore]
+		public bool _deleted
+		{
+			get { return (bool)this["_deleted"]; } 
+			set { this["_deleted"] = value; }
+		}
+		
 		public new object this[string key]
 		{
 			get
@@ -103,7 +108,7 @@ namespace NCouch
 		/// Refresh this instance.
 		/// </summary>
 		/// <returns>
-		/// false if deleted
+		/// false if not found
 		/// </returns>
 		public bool Refresh()
 		{
@@ -135,13 +140,18 @@ namespace NCouch
 			_rev = request.Send().Parse("rev") as string;				
 		}
 		
+		/// <summary>
+		/// Delete this document from DB
+		/// </summary>
+		/// <returns>
+		/// false if document not found
+		/// </returns>
 		public bool Delete()
 		{
-			var request = Prepare("DELETE");
-			request.SetQueryObject(new {rev = _rev});
 			try
-			{
-				_rev = request.Send().Parse("rev") as string;	
+			{				
+				_rev = DB.Delete(_id, _rev);
+				_deleted = true;
 				return true;
 			}
 			catch(ResponseException re)
@@ -149,8 +159,7 @@ namespace NCouch
 				if (re.Response.Status != HttpStatusCode.NotFound)
 					throw;
 				return false;
-			}
-			
+			}			
 		}
 		#endregion
 		
@@ -206,7 +215,7 @@ namespace NCouch
 		
 		public List<Attachment> GetAttachments()
 		{
-			List<Attachment> atts = new List<Attachment>();
+			var atts = new List<Attachment>();
 			if (ContainsKey("_attachments"))
 			{
 				foreach(string name in ((Dictionary<string, object>)this["_attachments"]).Keys)

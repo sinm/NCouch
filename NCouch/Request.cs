@@ -21,6 +21,8 @@ namespace NCouch
 			set { m_Verb = value.ToUpper(); }
 		} string m_Verb;
 		
+		public string Destination;
+		
 		public Auth Auth;
 		
 		public Dictionary<string, object> Query = new Dictionary<string, object>();
@@ -110,6 +112,10 @@ namespace NCouch
 					request.Headers.Add("If-Match", ETag);
 				}
 			}
+			if (!string.IsNullOrEmpty(Destination))
+			{
+				request.Headers.Add("Destination", Destination);
+			}
 			if (Verb != "GET" && Verb != "DELETE" && Verb != "HEAD" && Body != null)
 			{
 				request.ContentLength = Body.Length;
@@ -117,7 +123,7 @@ namespace NCouch
 				{
 					request_stream.Write(Body, 0, Body.Length);
 				}
-			}		
+			}
 			return request;
 		}
 		

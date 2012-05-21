@@ -75,7 +75,7 @@ namespace NCouch
 			id = (string)dict["id"];
 			var d = ((object[])dict["changes"])[0] as IDictionary;
 			rev = d.Contains("rev") ? (string)d["rev"] : String.Empty;
-			deleted = (bool)dict["deleted"];
+			deleted = dict.ContainsKey("deleted") ? (bool)dict["deleted"] : false;
 			doc = dict.ContainsKey("doc") ? 
 				Document.FromHash(dict["doc"] as Dictionary<string, object>, DB) : null;
 		}

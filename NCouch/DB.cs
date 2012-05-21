@@ -64,8 +64,37 @@ namespace NCouch
 		}
 		
 		//TODO: replication
-		//TODO: copy
 		//TODO: locals?
+		
+		/// <summary>
+		/// Copy document
+		/// </summary>
+		/// <param name='dst_rev'>
+		/// null or dst doc revision to overwrite it
+		/// </param>
+		public string Copy(string src_id, string dst_id, string dst_rev)
+		{
+			var request = Prepare("COPY", EscapePath(src_id));
+			request.Destination = EscapePath(dst_id);
+			if (!string.IsNullOrEmpty(dst_rev))
+			{
+				request.Destination += "?rev=" + dst_rev;
+			}
+			return request.Send().Parse("rev") as String;
+		}
+		
+		/// <summary>
+		/// Delete the specified document from db
+		/// </summary>
+		/// <returns>
+		/// updated document revision
+		/// </returns>
+		public string Delete(string doc_id, string doc_rev)
+		{
+			var request = Prepare("DELETE", EscapePath(doc_id));
+			request.SetQueryObject(new {rev = doc_rev});
+			return request.Send().Parse("rev") as string;			
+		}
 
 		public string Update(string update_handler)
 		{

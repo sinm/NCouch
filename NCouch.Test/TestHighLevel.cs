@@ -2,15 +2,11 @@ using System;
 using NUnit.Framework;
 using NCouch;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Reflection;
 using Employ.Model;
 using System.Threading;
 
 namespace NCouch.Test
 {
-	//TODO: more tests
 	[TestFixture]
 	public class TestHighLevel
 	{
@@ -170,6 +166,30 @@ namespace NCouch.Test
 		}
 		
 		[Test]
+		public void Copy()
+		{
+			var e = SampleData.readEmployee("employee-1");
+			DB1.Create(e);
+			var new_rev = DB1.Copy(e.Id, "new-emp", null);
+			var new_e = DB1.Read<Employee>("new-emp");
+			Assert.AreEqual(new_rev, new_e.Data._rev);
+			try
+			{
+				DB1.Copy(e.Id, "new-emp", null);
+				Assert.IsTrue(false);
+			}
+			catch(ResponseException re)
+			{
+				
+			}
+			e.FirstName = "foo";
+			e.Data.Update();
+			DB1.Copy(e.Id, new_e.Id, new_rev);
+			new_e.Data.Refresh();
+			Assert.AreEqual("foo", new_e.FirstName);
+		}
+		
+		[Test]
 		public void Changes()
 		{
 			var e = SampleData.readEmployee(listen_id);
@@ -183,10 +203,10 @@ namespace NCouch.Test
 			e.Data.Update();
 			e.LastName += "x";
 			e.Data.Update();
-			
-			for(int i=0; i<200;i++)
+			//TODO: bad smell
+			for(int i=0; i<300;i++)
 				Thread.Sleep(10);
-			Assert.AreEqual(listen_count, 3);
+			Assert.AreEqual(3, listen_count);
 		}
 		
 		int listen_count = 0;
@@ -196,7 +216,9 @@ namespace NCouch.Test
 		bool listen(ChangeLog log, Exception ex) 
 		{
 			if (ex != null)
+			{
 				return false;
+			}
 			foreach(Change change in log.results)
 			{
 				if (change.id == listen_id)
